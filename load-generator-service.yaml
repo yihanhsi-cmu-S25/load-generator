@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: load-generator-service
+spec:
+  selector:
+    app: load-generator
+  ports:
+    - protocol: TCP
+      port: 80 # Service 端口
+      targetPort: 8000 # Pod 內部端口
+  type: ClusterIP # 在 Kind 中，通常使用 ClusterIP 或 NodePort

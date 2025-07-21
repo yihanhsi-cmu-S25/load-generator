@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: load-client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: load-client
+  template:
+    metadata:
+      labels:
+        app: load-client
+    spec:
+      containers:
+      - name: busybox
+        image: busybox
+        command: ["sh", "-c", "while true; do wget -q -O- http://load-generator-service/?cpu_load_seconds=10&memory_load_mb=100; sleep 1; done"]
