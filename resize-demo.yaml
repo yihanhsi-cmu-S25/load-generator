@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: resize-demo
+spec:
+  containers:
+  - name: resource-watcher
+    image: ubuntu:22.04
+    command:
+    - "/bin/bash"
+    - "-c"
+    - |
+      apt-get update && apt-get install -y procps bc
+      echo "=== Pod Started: $(date) ==="
+
+      # Functions to read container resource limits
+      get_cpu_limit() {
+        if [ -f /sys/fs/cgroup/cpu.max ]; then
+          # cgroup v2
+          local cpu_data=$(cat /sys/fs/cgroup/cpu.max)
+          local quota=$(echo $cpu_data | awk '{print $1}')
+          local period=$(echo $cpu_data | awk '{print $2}')
+
+          if [ "$quota" = "max" ]; then
+            echo "unlimited"
+          else
+            echo "$(echo "scale=3; $quota / $period" | bc) cores"
+          fi
+        else
+          # cgroup v1
+          local quota=$(cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us)
+          local period=$(cat /sys/fs/cgroup/cpu/cpu.cfs_period_us)
+
+          if [ "$quota" = "-1" ]; then
+            echo "unlimited"
+          else
+            echo "$(echo "scale=3; $quota / $period" | bc) cores"
+          fi
+        fi
+      }
+
+      get_memory_limit() {
+        if [ -f /sys/fs/cgroup/memory.max ]; then
+          # cgroup v2
+          local mem=$(cat /sys/fs/cgroup/memory.max)
+          if [ "$mem" = "max" ]; then
+            echo "unlimited"
+          else
+            echo "$((mem / 1048576)) MiB"
+          fi
+        else
+          # cgroup v1
+          local mem=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes)
+          echo "$((mem / 1048576)) MiB"
+        fi
+      }
+
+      # Print resource info every 5 seconds
+      while true; do
+        echo "---------- Resource Check: $(date) ----------"
+        echo "CPU limit: $(get_cpu_limit)"
+        echo "Memory limit: $(get_memory_limit)"
+        echo "Available memory: $(free -h | grep Mem | awk '{print $7}')"
+        sleep 5
+      done
+    resizePolicy:
+    - resourceName: cpu
+      restartPolicy: NotRequired
+    - resourceName: memory
+      restartPolicy: NotRequired
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "128Mi"
+        cpu: "100m"

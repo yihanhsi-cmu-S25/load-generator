@@ -8,14 +8,14 @@ spec:
     kind: Deployment
     name: load-generator
   updatePolicy:
-    updateMode: "Auto"
+    updateMode: "InPlaceOrRecreate"
   resourcePolicy:
     containerPolicies:
-      - containerName: "*"
+      - containerName: '*'
         minAllowed:
-          cpu: "50m"
-          memory: "50Mi"
+          cpu: 100m
+          memory: 50Mi
         maxAllowed:
-          cpu: "2"
-          memory: "2Gi"
+          cpu: 300m
+          memory: 500Mi
         controlledResources: ["cpu", "memory"]

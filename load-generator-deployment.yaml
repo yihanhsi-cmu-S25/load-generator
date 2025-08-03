@@ -5,7 +5,7 @@ metadata:
   labels:
     app: load-generator
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: load-generator
@@ -14,12 +14,22 @@ spec:
       labels:
         app: load-generator
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534 # nobody
       containers:
       - name: load-generator
         image: load-generator:latest # 使用本地載入的 Image
         imagePullPolicy: IfNotPresent # 確保使用本地 Image
         ports:
-        - containerPort: 8000
+        - containerPort: 8000 # Pod 偵聽的端口
+
+        # 確保 resizePolicy 存在，以便 VPA 可以原地調整資源
+        resizePolicy:
+          - resourceName: cpu
+            restartPolicy: NotRequired
+          - resourceName: memory
+            restartPolicy: NotRequired
         resources:
           requests:
             cpu: "100m"
